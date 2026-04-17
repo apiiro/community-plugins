@@ -31,7 +31,7 @@ import {
   identityApiRef,
   useApi,
 } from '@backstage/core-plugin-api';
-import { createTimestamp, delay, makeLinksClickable } from '../utils';
+import { createTimestamp, delay } from '../utils';
 import { ChatbotApi } from '../apis';
 import useObservable from 'react-use/esm/useObservable';
 import Box from '@mui/material/Box';
@@ -132,21 +132,14 @@ function ChatAssistantApp() {
   const showPrompt = () => setShowPrompt(true);
   const hidePrompt = () => setShowPrompt(false);
 
-  useEffect(() => {
-    const applyClickableLinksToBotMessages = () => {
-      document
-        .querySelectorAll<HTMLElement>('.bot-message')
-        ?.forEach(message => {
-          const originalContent = message.innerHTML;
-          const newContent = makeLinksClickable(originalContent);
-          // Ensure there is a change before replacing the innerHTML
-          if (newContent !== originalContent) {
-            message.innerHTML = newContent;
-          }
-        });
-    };
-    applyClickableLinksToBotMessages();
-  }, [messages]);
+  // Note: Bot messages are rendered safely via Backstage's <MarkdownContent>
+  // component in ChatMessages.tsx, which auto-links URLs and uses
+  // `transformLinkUri` to reject non-http(s) schemes (e.g. `javascript:`).
+  // The previous implementation read `element.innerHTML`, ran a regex
+  // transformation over it, and wrote the result back to `innerHTML` — a
+  // well-known XSS anti-pattern (CWE-79) that bypasses React's built-in
+  // escaping and could execute attacker-controlled markup returned by the
+  // chatbot API. It has been removed in favor of the sanitized renderer.
 
   useEffect(() => {
     if (chatContainerRef.current) {
